@@ -29,6 +29,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.keycloak.util.JsonSerialization;
 
+import com.snuxoll.keycloak.upstreammfa.it.ItGoogleIdentityProviderFactory;
+import com.snuxoll.keycloak.upstreammfa.it.ItMicrosoftIdentityProviderFactory;
+
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 
 /**
@@ -48,16 +51,29 @@ class UpstreamMfaIT {
 
     @BeforeAll
     static void start() throws Exception {
+        // test-classes carries the it.* provider factories that point the Google/Microsoft overrides at upstream.
         keycloak = new KeycloakContainer(IMAGE)
-                .withProviderClassesFrom("target/classes")
+                .withProviderClassesFrom("target/classes", "target/test-classes")
                 .withRealmImportFiles("/realms/upstream-realm.json", "/realms/downstream-realm.json");
         keycloak.start();
         baseUrl = keycloak.getAuthServerUrl().replaceAll("/$", "");
 
         // IdPs are created here rather than imported because the browser-facing URL includes the mapped port.
         String adminToken = adminToken();
-        createIdentityProvider(adminToken, "up-mfa", "broker-mfa", "broker-mfa-secret");
-        createIdentityProvider(adminToken, "up-pwd", "broker-pwd", "broker-pwd-secret");
+        createIdentityProvider(adminToken, "up-mfa", "oidc", upstreamOidcConfig("broker-mfa"));
+        createIdentityProvider(adminToken, "up-pwd", "oidc", upstreamOidcConfig("broker-pwd"));
+        createIdentityProvider(adminToken, "up-google", ItGoogleIdentityProviderFactory.PROVIDER_ID,
+                itConfig("broker-google"));
+        // The Microsoft provider always asks for Graph's User.Read; the upstream must know the scope.
+        addOptionalScope(adminToken, "broker-entra", "User.Read");
+        createIdentityProvider(adminToken, "up-entra", ItMicrosoftIdentityProviderFactory.PROVIDER_ID,
+                itConfig("broker-entra"));
+
+        // The production overrides under the built-in ids. These never complete a login (no real Google or
+        // Microsoft); the tests only inspect the redirect they produce.
+        createIdentityProvider(adminToken, "google", "google", Map.of("clientId", "dummy", "clientSecret", "dummy"));
+        createIdentityProvider(adminToken, "microsoft", "microsoft",
+                Map.of("clientId", "dummy", "clientSecret", "dummy"));
     }
 
     @AfterAll
@@ -98,6 +114,52 @@ class UpstreamMfaIT {
         assertEquals(List.of("pwd", "mfa"), accessTokenClaims(again.code()).get("amr"));
     }
 
+    @Test
+    void googleOverrideIsUsedAndRequestsAmrClaims() throws Exception {
+        URI redirect = new Browser().redirectToIdp("google");
+
+        assertEquals("accounts.google.com", redirect.getHost());
+        Map<String, String> query = queryParams(redirect);
+        assertNotNull(query.get("claims"), () -> "no claims param in " + redirect);
+        assertEquals(
+                JsonSerialization.readValue(
+                        "{\"id_token\":{\"amr\":{\"essential\":true},\"auth_time\":{\"essential\":true}}}", Map.class),
+                JsonSerialization.readValue(query.get("claims"), Map.class));
+    }
+
+    @Test
+    void microsoftOverrideIsUsedAndRequestsAnIdToken() throws Exception {
+        URI redirect = new Browser().redirectToIdp("microsoft");
+
+        assertEquals("login.microsoftonline.com", redirect.getHost());
+        assertEquals("/common/oauth2/v2.0/authorize", redirect.getPath());
+        List<String> scopes = List.of(queryParams(redirect).get("scope").split(" "));
+        // The built-in provider sends only User.read, and never gets an ID token.
+        assertTrue(scopes.contains("openid") && scopes.contains("User.Read"), () -> "scope was " + scopes);
+        assertNotNull(queryParams(redirect).get("nonce"));
+    }
+
+    @Test
+    void googleProviderCarriesUpstreamMfa() throws Exception {
+        LoginResult result = new Browser().login("up-google", "erin", "erin");
+
+        assertNotNull(result.code(), () -> "expected a redirect to the app, got page:\n" + result.page());
+        assertEquals(List.of("pwd", "mfa"), accessTokenClaims(result.code()).get("amr"));
+    }
+
+    @Test
+    void microsoftProviderCarriesUpstreamMfaAndKeysOnGraphId() throws Exception {
+        LoginResult result = new Browser().login("up-entra", "dave", "dave");
+
+        assertNotNull(result.code(), () -> "expected a redirect to the app, got page:\n" + result.page());
+        assertEquals(List.of("pwd", "mfa"), accessTokenClaims(result.code()).get("amr"));
+
+        // The link must use the Graph id (as the built-in provider does), not the ID token's sub.
+        List<Map<String, Object>> links = federatedIdentities("dave@example.com");
+        assertEquals(1, links.size(), () -> "links: " + links);
+        assertEquals("4a1b2c3d4e5f6071", links.get(0).get("userId"));
+    }
+
     private static boolean isOtpPage(String html) {
         Document doc = Jsoup.parse(html);
         return doc.selectFirst("input[name=otp]") != null || doc.selectFirst("input[name=totp]") != null;
@@ -114,11 +176,11 @@ class UpstreamMfaIT {
         return (String) token.get("access_token");
     }
 
-    private static void createIdentityProvider(String adminToken, String alias, String clientId, String secret)
-            throws Exception {
-        Map<String, Object> config = new LinkedHashMap<>();
+    /** Generic OIDC IdP config for an upstream realm client whose secret is "{clientId}-secret". */
+    private static Map<String, String> upstreamOidcConfig(String clientId) {
+        Map<String, String> config = new LinkedHashMap<>();
         config.put("clientId", clientId);
-        config.put("clientSecret", secret);
+        config.put("clientSecret", clientId + "-secret");
         config.put("clientAuthMethod", "client_secret_post");
         config.put("authorizationUrl", baseUrl + "/realms/upstream/protocol/openid-connect/auth");
         config.put("tokenUrl", INTERNAL_UPSTREAM + "/protocol/openid-connect/token");
@@ -129,10 +191,29 @@ class UpstreamMfaIT {
         config.put("issuer", baseUrl + "/realms/upstream");
         config.put("defaultScope", "openid profile email");
         config.put("syncMode", "IMPORT");
+        return config;
+    }
 
+    /** Config for the it.* providers, which take their endpoints from it.* keys (see ItEndpoints). */
+    private static Map<String, String> itConfig(String clientId) {
+        Map<String, String> oidc = upstreamOidcConfig(clientId);
+        Map<String, String> config = new LinkedHashMap<>();
+        config.put("clientId", clientId);
+        config.put("clientSecret", oidc.get("clientSecret"));
+        config.put("clientAuthMethod", "client_secret_post");
+        config.put("syncMode", "IMPORT");
+        config.put("it.authorizationUrl", oidc.get("authorizationUrl"));
+        config.put("it.tokenUrl", oidc.get("tokenUrl"));
+        config.put("it.jwksUrl", oidc.get("jwksUrl"));
+        config.put("it.issuer", oidc.get("issuer"));
+        return config;
+    }
+
+    private static void createIdentityProvider(String adminToken, String alias, String providerId,
+                                               Map<String, String> config) throws Exception {
         Map<String, Object> idp = new LinkedHashMap<>();
         idp.put("alias", alias);
-        idp.put("providerId", "oidc");
+        idp.put("providerId", providerId);
         idp.put("enabled", true);
         idp.put("trustEmail", true);
         idp.put("postBrokerLoginFlowAlias", "post-broker-mfa");
@@ -146,7 +227,44 @@ class UpstreamMfaIT {
                 "config", Map.of("syncMode", "INHERIT")));
     }
 
-    private static void postJson(String adminToken, String path, Object body) throws Exception {
+    @SuppressWarnings("unchecked")
+    private static void addOptionalScope(String adminToken, String clientId, String scope) throws Exception {
+        String location = postJson(adminToken, "/admin/realms/upstream/client-scopes",
+                Map.of("name", scope, "protocol", "openid-connect"));
+        String scopeId = location.substring(location.lastIndexOf('/') + 1);
+        List<Map<String, Object>> clients = getJson(adminToken, "/admin/realms/upstream/clients?clientId=" + clientId,
+                List.class);
+        HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + "/admin/realms/upstream/clients/"
+                        + clients.get(0).get("id") + "/optional-client-scopes/" + scopeId))
+                .header("Authorization", "Bearer " + adminToken)
+                .PUT(HttpRequest.BodyPublishers.noBody())
+                .build();
+        HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+        assertEquals(204, response.statusCode(), () -> "adding scope failed: " + response.body());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> federatedIdentities(String username) throws Exception {
+        String adminToken = adminToken();
+        List<Map<String, Object>> users = getJson(adminToken, "/admin/realms/downstream/users?exact=true&username="
+                + URLEncoder.encode(username, StandardCharsets.UTF_8), List.class);
+        assertEquals(1, users.size(), () -> "users named " + username + ": " + users);
+        return getJson(adminToken, "/admin/realms/downstream/users/" + users.get(0).get("id") + "/federated-identity",
+                List.class);
+    }
+
+    private static <T> T getJson(String adminToken, String path, Class<T> type) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + path))
+                .header("Authorization", "Bearer " + adminToken)
+                .GET()
+                .build();
+        HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, response.statusCode(), () -> "GET " + path + " failed: " + response.body());
+        return JsonSerialization.readValue(response.body(), type);
+    }
+
+    /** Returns the Location of the created resource. */
+    private static String postJson(String adminToken, String path, Object body) throws Exception {
         HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + path))
                 .header("Authorization", "Bearer " + adminToken)
                 .header("Content-Type", "application/json")
@@ -154,6 +272,7 @@ class UpstreamMfaIT {
                 .build();
         HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
         assertEquals(201, response.statusCode(), () -> "POST " + path + " failed: " + response.body());
+        return response.headers().firstValue("Location").orElse("");
     }
 
     // --- tokens ------------------------------------------------------------------------------------------------
@@ -187,6 +306,18 @@ class UpstreamMfaIT {
                 .collect(Collectors.joining("&"));
     }
 
+    private static Map<String, String> queryParams(URI uri) {
+        Map<String, String> params = new LinkedHashMap<>();
+        if (uri.getRawQuery() != null) {
+            for (String pair : uri.getRawQuery().split("&")) {
+                String[] kv = pair.split("=", 2);
+                params.put(URLDecoder.decode(kv[0], StandardCharsets.UTF_8),
+                        kv.length == 2 ? URLDecoder.decode(kv[1], StandardCharsets.UTF_8) : "");
+            }
+        }
+        return params;
+    }
+
     // --- browser -----------------------------------------------------------------------------------------------
 
     /** Where a login ended up: the app's authorization code, or the page Keycloak stopped on. */
@@ -206,17 +337,35 @@ class UpstreamMfaIT {
         // path -> (name -> value); everything here is on one host
         private final Map<String, Map<String, String>> cookies = new LinkedHashMap<>();
 
-        LoginResult login(String idpAlias, String username, String password) throws Exception {
-            String authUrl = baseUrl + "/realms/downstream/protocol/openid-connect/auth?" + encode(Map.of(
+        /** Starts a brokered login and returns the first redirect that leaves Keycloak, without following it. */
+        URI redirectToIdp(String idpAlias) throws Exception {
+            HttpResponse<String> response = get(authUrl(idpAlias));
+            URI keycloakUri = URI.create(baseUrl);
+            for (int hops = 0; hops < 20; hops++) {
+                int status = response.statusCode();
+                URI next = response.uri().resolve(response.headers().firstValue("Location").orElseThrow(
+                        () -> new AssertionError("no redirect to the IdP; got " + status)));
+                if (!keycloakUri.getAuthority().equals(next.getAuthority())) {
+                    return next;
+                }
+                response = get(next);
+            }
+            throw new IllegalStateException("too many redirects");
+        }
+
+        private static URI authUrl(String idpAlias) {
+            return URI.create(baseUrl + "/realms/downstream/protocol/openid-connect/auth?" + encode(Map.of(
                     "client_id", "app",
                     "redirect_uri", CALLBACK,
                     "response_type", "code",
                     "scope", "openid",
                     "state", "state",
                     "nonce", "nonce",
-                    "kc_idp_hint", idpAlias));
+                    "kc_idp_hint", idpAlias)));
+        }
 
-            Page page = follow(get(URI.create(authUrl)));
+        LoginResult login(String idpAlias, String username, String password) throws Exception {
+            Page page = follow(get(authUrl(idpAlias)));
             if (page.code() != null) {
                 return new LoginResult(page.code(), null);
             }
@@ -289,22 +438,13 @@ class UpstreamMfaIT {
                 }
                 URI next = response.uri().resolve(response.headers().firstValue("Location").orElseThrow());
                 if (next.toString().startsWith(CALLBACK)) {
-                    return new Page(302, next, null, queryParam(next, "code"));
+                    return new Page(302, next, null, queryParams(next).get("code"));
                 }
                 response = get(next);
             }
             throw new IllegalStateException("too many redirects");
         }
 
-        private static String queryParam(URI uri, String name) {
-            for (String pair : uri.getRawQuery().split("&")) {
-                String[] kv = pair.split("=", 2);
-                if (kv[0].equals(name) && kv.length == 2) {
-                    return URLDecoder.decode(kv[1], StandardCharsets.UTF_8);
-                }
-            }
-            return null;
-        }
 
         private record Page(int status, URI uri, String body, String code) {
         }

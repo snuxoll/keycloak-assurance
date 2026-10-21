@@ -7,7 +7,9 @@
       "secret": "broker-mfa-secret",
       "publicClient": false,
       "standardFlowEnabled": true,
-      "redirectUris": ["*"],
+      "redirectUris": [
+        "*"
+      ],
       "protocolMappers": [
         {
           "name": "amr pwd+mfa",
@@ -29,7 +31,9 @@
       "secret": "broker-pwd-secret",
       "publicClient": false,
       "standardFlowEnabled": true,
-      "redirectUris": ["*"],
+      "redirectUris": [
+        "*"
+      ],
       "protocolMappers": [
         {
           "name": "amr pwd",
@@ -39,6 +43,67 @@
             "claim.name": "amr",
             "claim.value": "[\"pwd\"]",
             "jsonType.label": "JSON",
+            "id.token.claim": "true",
+            "access.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "broker-google",
+      "secret": "broker-google-secret",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "redirectUris": [
+        "*"
+      ],
+      "protocolMappers": [
+        {
+          "name": "amr pwd+mfa",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "claim.name": "amr",
+            "claim.value": "[\"pwd\",\"mfa\"]",
+            "jsonType.label": "JSON",
+            "id.token.claim": "true",
+            "access.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "broker-entra",
+      "secret": "broker-entra-secret",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "redirectUris": [
+        "*"
+      ],
+      "protocolMappers": [
+        {
+          "name": "amr pwd+mfa",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "claim.name": "amr",
+            "claim.value": "[\"pwd\",\"mfa\"]",
+            "jsonType.label": "JSON",
+            "id.token.claim": "true",
+            "access.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        },
+        {
+          "name": "graph id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "claim.name": "graph_id",
+            "claim.value": "4a1b2c3d4e5f6071",
+            "jsonType.label": "String",
             "id.token.claim": "true",
             "access.token.claim": "false",
             "userinfo.token.claim": "false"
@@ -55,7 +120,13 @@
       "emailVerified": true,
       "firstName": "Alice",
       "lastName": "Upstream",
-      "credentials": [{ "type": "password", "value": "alice", "temporary": false }]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "alice",
+          "temporary": false
+        }
+      ]
     },
     {
       "username": "carol",
@@ -64,7 +135,13 @@
       "emailVerified": true,
       "firstName": "Carol",
       "lastName": "Upstream",
-      "credentials": [{ "type": "password", "value": "carol", "temporary": false }]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "carol",
+          "temporary": false
+        }
+      ]
     },
     {
       "username": "bob",
@@ -73,7 +150,43 @@
       "emailVerified": true,
       "firstName": "Bob",
       "lastName": "Upstream",
-      "credentials": [{ "type": "password", "value": "bob", "temporary": false }]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "bob",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "erin",
+      "enabled": true,
+      "email": "erin@example.com",
+      "emailVerified": true,
+      "firstName": "Erin",
+      "lastName": "Upstream",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "erin",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "dave",
+      "enabled": true,
+      "email": "dave@example.com",
+      "emailVerified": true,
+      "firstName": "Dave",
+      "lastName": "Upstream",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "dave",
+          "temporary": false
+        }
+      ]
     }
   ]
 }
