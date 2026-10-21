@@ -1,0 +1,12 @@
+# Local Keycloak with the built provider mounted. Run `mvn package` first.
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.1
+    command: start-dev
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./target/keycloak-upstream-mfa-0.1.0-SNAPSHOT.jar:/opt/keycloak/providers/keycloak-upstream-mfa.jar:ro
