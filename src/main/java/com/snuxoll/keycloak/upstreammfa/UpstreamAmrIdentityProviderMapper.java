@@ -91,9 +91,30 @@ public class UpstreamAmrIdentityProviderMapper extends AbstractIdentityProviderM
         return true;
     }
 
+    // Runs on every broker callback, which covers returning users.
     @Override
     public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm,
                                             IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        storeNote(mapperModel, context);
+    }
+
+    // First-broker-login resets the auth session (AuthenticationProcessor.resetFlow), wiping the note written in
+    // preprocessFederatedIdentity. Keycloak restores the brokered context afterwards and calls these hooks, so the
+    // note is written again: importNewUser for a new user, updateBrokeredUser when linking an existing one (only
+    // in sync modes that delegate to it; otherwise the linking login falls back to local MFA).
+    @Override
+    public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user,
+                              IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        storeNote(mapperModel, context);
+    }
+
+    @Override
+    public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user,
+                                   IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        storeNote(mapperModel, context);
+    }
+
+    private static void storeNote(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String claim = UpstreamAmr.configOrDefault(mapperModel.getConfig().get(CONF_CLAIM), UpstreamAmr.DEFAULT_CLAIM);
         String note = UpstreamAmr.configOrDefault(mapperModel.getConfig().get(CONF_NOTE), UpstreamAmr.DEFAULT_NOTE);
 
@@ -101,17 +122,6 @@ public class UpstreamAmrIdentityProviderMapper extends AbstractIdentityProviderM
         if (!amr.isEmpty()) {
             context.setSessionNote(note, UpstreamAmr.toNote(amr));
         }
-    }
-
-    // preprocessFederatedIdentity runs on every login; these hooks run only on import or sync.
-    @Override
-    public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user,
-                              IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-    }
-
-    @Override
-    public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user,
-                                   IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
     }
 
     /** Only a validated ID token counts; userinfo and access tokens are never consulted. */
