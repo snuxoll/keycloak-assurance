@@ -8,8 +8,8 @@ This project reads the upstream IdP's `amr` (Authentication Methods References) 
 post-broker-login flow skip local MFA when the upstream methods meet a configurable bar, and
 carries the upstream methods through to the `amr` claim in Keycloak's own tokens.
 
-> **Status:** early development. The IdP mapper, condition and protocol mapper work end to end against a
-> generic OIDC IdP. The Google and Microsoft provider overrides are not written yet.
+> **Status:** all components are implemented and covered by integration tests against a stand-in upstream
+> Keycloak. They have not been tested against real Google or Entra ID yet.
 
 ## Components
 
@@ -18,12 +18,19 @@ carries the upstream methods through to the `amr` claim in Keycloak's own tokens
 | Protocol mapper: emits `amr` merging local and upstream methods | `upstream-mfa-amr-mapper` | Done |
 | IdP mapper: copies the upstream ID token's `amr` into a user-session note | `upstream-mfa-idp-mapper` | Done |
 | Conditional authenticator: matches upstream `amr` against an allowed list | `upstream-mfa-condition` | Done |
-| Google provider override: requests the `amr` claim from Google | `google` | Planned |
-| Microsoft provider override: validates Entra's ID token and keeps existing account links | `microsoft` | Planned |
+| Google provider override: requests the `amr` claim from Google | `google` | Done |
+| Microsoft provider override: validates Entra's ID token and keeps existing account links | `microsoft` | Done |
 
 The two provider overrides replace Keycloak's built-in `google` and `microsoft` social
 providers under the same ids. That way existing IdP configurations and linked accounts keep
 working. They depend on Keycloak internals and must be rechecked on every Keycloak upgrade.
+Keycloak logs a `KC-SERVICES0047` "internal SPI" warning for each of them at startup; that is expected.
+
+- **Google:** in the Google Cloud console, turn on "Authentication strength claims" and "Session age claims".
+  Google only honours them for verified, in-production apps.
+- **Microsoft:** add `amr` to the app registration's `optionalClaims.idToken`. The override always requests
+  `openid profile email User.Read` and keys users on the Graph `/me` id, exactly as the built-in provider did.
+  For multi-tenant (`common`) apps, it requires each ID token's `iss` to match its `tid`.
 
 ## Configuration
 
@@ -70,10 +77,17 @@ mvn verify   # unit + integration tests (needs Docker or Podman)
 ```
 
 The integration test (`UpstreamMfaIT`) starts Keycloak 26.8.1 with Testcontainers and two realms. `upstream`
-stands in for the external IdP: one client asserts `amr: ["pwd","mfa"]` and another `["pwd"]`. `downstream`
-brokers to it through generic OIDC IdPs that use this project's mapper, condition and post-broker flow. The test
-drives the login over plain HTTP and checks that local OTP is skipped or required, and that the token's `amr`
-carries the upstream values. Keycloak's container log is saved to `target/keycloak-it.log`.
+stands in for the external IdP, with clients that assert fixed `amr` values. `downstream` brokers to it using
+this project's mapper, condition and post-broker flow. The test drives logins over plain HTTP and checks:
+
+- Local OTP is skipped or required depending on the upstream `amr`, and the token's `amr` carries the upstream
+  values.
+- The Google and Microsoft overrides win over the built-ins: their redirects carry the `claims` parameter and
+  the `openid` scope.
+- The override providers work end to end, and Entra links are keyed on the Graph id. This uses test-only
+  `google-it` and `microsoft-it` factories that point the same provider code at the upstream realm.
+
+Keycloak's container log is saved to `target/keycloak-it.log`.
 
 ## Local Keycloak
 
