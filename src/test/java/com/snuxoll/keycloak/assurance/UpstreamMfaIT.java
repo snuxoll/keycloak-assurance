@@ -1,4 +1,4 @@
-package com.snuxoll.keycloak.upstreammfa;
+package com.snuxoll.keycloak.assurance;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -29,8 +29,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.keycloak.util.JsonSerialization;
 
-import com.snuxoll.keycloak.upstreammfa.it.ItGoogleIdentityProviderFactory;
-import com.snuxoll.keycloak.upstreammfa.it.ItMicrosoftIdentityProviderFactory;
+import com.snuxoll.keycloak.assurance.it.ItGoogleIdentityProviderFactory;
+import com.snuxoll.keycloak.assurance.it.ItMicrosoftIdentityProviderFactory;
 
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 

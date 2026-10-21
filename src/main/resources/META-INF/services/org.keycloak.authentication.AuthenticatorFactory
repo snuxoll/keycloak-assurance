@@ -1,1 +1,1 @@
-com.snuxoll.keycloak.upstreammfa.UpstreamMfaConditionalAuthenticatorFactory
+com.snuxoll.keycloak.assurance.UpstreamMfaConditionalAuthenticatorFactory

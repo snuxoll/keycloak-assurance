@@ -1,4 +1,4 @@
-package com.snuxoll.keycloak.upstreammfa;
+package com.snuxoll.keycloak.assurance;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -26,16 +26,16 @@ import com.fasterxml.jackson.databind.JsonNode;
  * <p>The federated identity is still keyed and populated from Microsoft Graph {@code /me}, exactly as the built-in
  * provider does it, so existing account links and user attribute mappers keep working unchanged.
  */
-public class UpstreamMfaMicrosoftIdentityProvider extends OIDCIdentityProvider
+public class AssuranceMicrosoftIdentityProvider extends OIDCIdentityProvider
         implements SocialIdentityProvider<OIDCIdentityProviderConfig> {
 
     private static final String LOGIN_URL = "https://login.microsoftonline.com/%s";
     static final String GRAPH_PROFILE_URL = "https://graph.microsoft.com/v1.0/me/";
     static final String DEFAULT_SCOPE = "openid profile email User.Read";
 
-    private static final String GRAPH_ID = "upstream-mfa.graph-id";
+    private static final String GRAPH_ID = "assurance.graph-id";
 
-    public UpstreamMfaMicrosoftIdentityProvider(KeycloakSession session, MicrosoftIdentityProviderConfig config) {
+    public AssuranceMicrosoftIdentityProvider(KeycloakSession session, MicrosoftIdentityProviderConfig config) {
         super(session, config);
 
         // Same tenant handling as the built-in provider: 'common' unless a tenant is configured.

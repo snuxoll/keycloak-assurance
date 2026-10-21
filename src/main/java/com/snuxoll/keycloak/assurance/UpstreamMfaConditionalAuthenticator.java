@@ -1,4 +1,4 @@
-package com.snuxoll.keycloak.upstreammfa;
+package com.snuxoll.keycloak.assurance;
 
 import java.util.List;
 import java.util.Map;

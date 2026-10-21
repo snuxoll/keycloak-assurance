@@ -9,4 +9,4 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./target/keycloak-upstream-mfa-0.1.0-SNAPSHOT.jar:/opt/keycloak/providers/keycloak-upstream-mfa.jar:ro
+      - ./target/keycloak-assurance-0.1.0-SNAPSHOT.jar:/opt/keycloak/providers/keycloak-assurance.jar:ro

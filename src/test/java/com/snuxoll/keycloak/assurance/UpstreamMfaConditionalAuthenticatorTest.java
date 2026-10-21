@@ -1,4 +1,4 @@
-package com.snuxoll.keycloak.upstreammfa;
+package com.snuxoll.keycloak.assurance;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;

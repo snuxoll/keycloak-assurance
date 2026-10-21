@@ -1,4 +1,4 @@
-package com.snuxoll.keycloak.upstreammfa;
+package com.snuxoll.keycloak.assurance;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +21,7 @@ import org.keycloak.representations.JsonWebToken;
  */
 public class UpstreamAmrIdentityProviderMapper extends AbstractIdentityProviderMapper {
 
-    public static final String PROVIDER_ID = "upstream-mfa-idp-mapper";
+    public static final String PROVIDER_ID = "assurance-idp-amr-mapper";
 
     public static final String CONF_CLAIM = "claim";
     public static final String CONF_NOTE = "note";

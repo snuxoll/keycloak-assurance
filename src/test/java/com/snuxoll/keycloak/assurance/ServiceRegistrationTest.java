@@ -1,4 +1,4 @@
-package com.snuxoll.keycloak.upstreammfa;
+package com.snuxoll.keycloak.assurance;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -30,8 +30,8 @@ class ServiceRegistrationTest {
     @Test
     void providerOverridesAreRegisteredInTheSocialSpi() {
         // Not the generic IdentityProvider SPI: IdP lookup searches that one first and would bypass order().
-        assertRegistered(SocialIdentityProviderFactory.class, UpstreamMfaGoogleIdentityProviderFactory.class);
-        assertRegistered(SocialIdentityProviderFactory.class, UpstreamMfaMicrosoftIdentityProviderFactory.class);
+        assertRegistered(SocialIdentityProviderFactory.class, AssuranceGoogleIdentityProviderFactory.class);
+        assertRegistered(SocialIdentityProviderFactory.class, AssuranceMicrosoftIdentityProviderFactory.class);
     }
 
     private static <T> void assertRegistered(Class<T> spi, Class<? extends T> impl) {

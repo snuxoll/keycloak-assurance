@@ -1,4 +1,4 @@
-package com.snuxoll.keycloak.upstreammfa;
+package com.snuxoll.keycloak.assurance;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -14,13 +14,13 @@ import org.keycloak.social.google.GoogleIdentityProviderConfig;
  * Google, plus the {@code claims} request parameter Google requires on every auth request before it will put
  * {@code amr} and {@code auth_time} in the ID token.
  */
-public class UpstreamMfaGoogleIdentityProvider extends GoogleIdentityProvider {
+public class AssuranceGoogleIdentityProvider extends GoogleIdentityProvider {
 
     static final String CLAIMS_PARAM = "claims";
     static final String CLAIMS_REQUEST =
             "{\"id_token\":{\"amr\":{\"essential\":true},\"auth_time\":{\"essential\":true}}}";
 
-    public UpstreamMfaGoogleIdentityProvider(KeycloakSession session, GoogleIdentityProviderConfig config) {
+    public AssuranceGoogleIdentityProvider(KeycloakSession session, GoogleIdentityProviderConfig config) {
         super(session, config);
     }
 

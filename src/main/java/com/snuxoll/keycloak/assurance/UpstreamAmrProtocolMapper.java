@@ -1,4 +1,4 @@
-package com.snuxoll.keycloak.upstreammfa;
+package com.snuxoll.keycloak.assurance;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +19,7 @@ public class UpstreamAmrProtocolMapper extends AmrProtocolMapper
         implements UserInfoTokenMapper {
 
     // Keycloak ships its own "oidc-amr-mapper"; keep this ID distinct.
-    public static final String PROVIDER_ID = "upstream-mfa-amr-mapper";
+    public static final String PROVIDER_ID = "assurance-amr-mapper";
 
     public static final String CONF_NOTE = "note";
 

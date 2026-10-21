@@ -1,4 +1,4 @@
-package com.snuxoll.keycloak.upstreammfa.it;
+package com.snuxoll.keycloak.assurance.it;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,15 +12,15 @@ import org.keycloak.social.microsoft.MicrosoftIdentityProviderConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.snuxoll.keycloak.upstreammfa.UpstreamMfaMicrosoftIdentityProvider;
-import com.snuxoll.keycloak.upstreammfa.UpstreamMfaMicrosoftIdentityProviderFactory;
+import com.snuxoll.keycloak.assurance.AssuranceMicrosoftIdentityProvider;
+import com.snuxoll.keycloak.assurance.AssuranceMicrosoftIdentityProviderFactory;
 
 /**
  * Test-only: the production Microsoft override, pointed at the upstream test realm. There is no Graph to call,
  * so the Graph-shaped profile is built from ID token claims; the upstream asserts a {@code graph_id} that differs
  * from {@code sub}, to prove the federated identity is keyed on the Graph id.
  */
-public class ItMicrosoftIdentityProviderFactory extends UpstreamMfaMicrosoftIdentityProviderFactory {
+public class ItMicrosoftIdentityProviderFactory extends AssuranceMicrosoftIdentityProviderFactory {
 
     public static final String PROVIDER_ID = "microsoft-it";
 
@@ -30,10 +30,10 @@ public class ItMicrosoftIdentityProviderFactory extends UpstreamMfaMicrosoftIden
     }
 
     @Override
-    public UpstreamMfaMicrosoftIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
+    public AssuranceMicrosoftIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
         Map<String, String> itConfig = new HashMap<>(model.getConfig());
         MicrosoftIdentityProviderConfig config = new MicrosoftIdentityProviderConfig(model);
-        UpstreamMfaMicrosoftIdentityProvider provider = new UpstreamMfaMicrosoftIdentityProvider(session, config) {
+        AssuranceMicrosoftIdentityProvider provider = new AssuranceMicrosoftIdentityProvider(session, config) {
             @Override
             protected JsonNode fetchProfile(String accessToken, JsonWebToken idToken) {
                 Map<String, Object> claims = idToken.getOtherClaims();

@@ -1,4 +1,4 @@
-package com.snuxoll.keycloak.upstreammfa;
+package com.snuxoll.keycloak.assurance;
 
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -8,16 +8,16 @@ import org.keycloak.social.google.GoogleIdentityProviderFactory;
 
 /**
  * Replaces the built-in {@code google} factory under the same id, so existing Google IdPs pick up
- * {@link UpstreamMfaGoogleIdentityProvider} without being recreated. Must be registered in the social SPI: IdP
+ * {@link AssuranceGoogleIdentityProvider} without being recreated. Must be registered in the social SPI: IdP
  * lookup searches the generic IdentityProvider SPI first, and {@link #order()} only breaks ties within one SPI.
  */
-public class UpstreamMfaGoogleIdentityProviderFactory extends GoogleIdentityProviderFactory {
+public class AssuranceGoogleIdentityProviderFactory extends GoogleIdentityProviderFactory {
 
     static final int ORDER = 100;
 
     @Override
     public GoogleIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
-        return new UpstreamMfaGoogleIdentityProvider(session, new GoogleIdentityProviderConfig(model));
+        return new AssuranceGoogleIdentityProvider(session, new GoogleIdentityProviderConfig(model));
     }
 
     @Override

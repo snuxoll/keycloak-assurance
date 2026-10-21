@@ -5,11 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.snuxoll.keycloak</groupId>
-    <artifactId>keycloak-upstream-mfa</artifactId>
+    <artifactId>keycloak-assurance</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>Keycloak Upstream MFA</name>
+    <name>Keycloak Assurance</name>
 
     <properties>
         <maven.compiler.release>21</maven.compiler.release>

@@ -1,2 +1,2 @@
-com.snuxoll.keycloak.upstreammfa.it.ItGoogleIdentityProviderFactory
-com.snuxoll.keycloak.upstreammfa.it.ItMicrosoftIdentityProviderFactory
+com.snuxoll.keycloak.assurance.it.ItGoogleIdentityProviderFactory
+com.snuxoll.keycloak.assurance.it.ItMicrosoftIdentityProviderFactory

@@ -1,4 +1,4 @@
-package com.snuxoll.keycloak.upstreammfa;
+package com.snuxoll.keycloak.assurance;
 
 import java.util.List;
 
@@ -15,9 +15,9 @@ import org.keycloak.social.microsoft.MicrosoftIdentityProviderFactory;
  * config and account links. Must be registered in the social SPI: IdP lookup searches the generic
  * IdentityProvider SPI first, and {@link #order()} only breaks ties within one SPI.
  */
-public class UpstreamMfaMicrosoftIdentityProviderFactory
-        extends AbstractIdentityProviderFactory<UpstreamMfaMicrosoftIdentityProvider>
-        implements SocialIdentityProviderFactory<UpstreamMfaMicrosoftIdentityProvider> {
+public class AssuranceMicrosoftIdentityProviderFactory
+        extends AbstractIdentityProviderFactory<AssuranceMicrosoftIdentityProvider>
+        implements SocialIdentityProviderFactory<AssuranceMicrosoftIdentityProvider> {
 
     static final int ORDER = 100;
 
@@ -35,8 +35,8 @@ public class UpstreamMfaMicrosoftIdentityProviderFactory
     }
 
     @Override
-    public UpstreamMfaMicrosoftIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
-        return new UpstreamMfaMicrosoftIdentityProvider(session, new MicrosoftIdentityProviderConfig(model));
+    public AssuranceMicrosoftIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
+        return new AssuranceMicrosoftIdentityProvider(session, new MicrosoftIdentityProviderConfig(model));
     }
 
     @Override

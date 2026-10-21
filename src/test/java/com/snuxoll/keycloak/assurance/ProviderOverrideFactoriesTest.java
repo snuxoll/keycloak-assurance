@@ -1,4 +1,4 @@
-package com.snuxoll.keycloak.upstreammfa;
+package com.snuxoll.keycloak.assurance;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,14 +14,14 @@ class ProviderOverrideFactoriesTest {
 
     @Test
     void googleOverrideTakesTheBuiltInId() {
-        UpstreamMfaGoogleIdentityProviderFactory factory = new UpstreamMfaGoogleIdentityProviderFactory();
+        AssuranceGoogleIdentityProviderFactory factory = new AssuranceGoogleIdentityProviderFactory();
         assertEquals(GoogleIdentityProviderFactory.PROVIDER_ID, factory.getId());
         assertTrue(factory.order() > new GoogleIdentityProviderFactory().order());
     }
 
     @Test
     void microsoftOverrideTakesTheBuiltInId() {
-        UpstreamMfaMicrosoftIdentityProviderFactory factory = new UpstreamMfaMicrosoftIdentityProviderFactory();
+        AssuranceMicrosoftIdentityProviderFactory factory = new AssuranceMicrosoftIdentityProviderFactory();
         assertEquals(MicrosoftIdentityProviderFactory.PROVIDER_ID, factory.getId());
         assertEquals(new MicrosoftIdentityProviderFactory().getName(), factory.getName());
         assertTrue(factory.order() > new MicrosoftIdentityProviderFactory().order());
@@ -31,7 +31,7 @@ class ProviderOverrideFactoriesTest {
     void microsoftOverrideKeepsTheBuiltInAdminSettings() {
         // The admin console renders the winning factory's properties; existing fields must not disappear.
         assertEquals(names(new MicrosoftIdentityProviderFactory().getConfigProperties()),
-                names(new UpstreamMfaMicrosoftIdentityProviderFactory().getConfigProperties()));
+                names(new AssuranceMicrosoftIdentityProviderFactory().getConfigProperties()));
     }
 
     private static List<String> names(List<ProviderConfigProperty> properties) {

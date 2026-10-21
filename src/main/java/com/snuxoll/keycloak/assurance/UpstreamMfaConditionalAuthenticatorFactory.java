@@ -1,4 +1,4 @@
-package com.snuxoll.keycloak.upstreammfa;
+package com.snuxoll.keycloak.assurance;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 public class UpstreamMfaConditionalAuthenticatorFactory implements ConditionalAuthenticatorFactory {
 
-    public static final String PROVIDER_ID = "upstream-mfa-condition";
+    public static final String PROVIDER_ID = "assurance-upstream-mfa-condition";
 
     public static final String CONF_ALLOWED = "allowedAmr";
     public static final String CONF_NOTE = "note";

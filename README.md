@@ -1,6 +1,8 @@
-# keycloak-upstream-mfa
+# keycloak-assurance
 
-Keycloak extensions for trusting MFA performed at an upstream identity provider.
+Keycloak extensions for authentication assurance: knowing, and raising, how strongly a user proved who they are.
+
+The first feature is trusting MFA performed at an upstream identity provider.
 
 When a user signs in through a brokered IdP such as Google or Microsoft Entra ID and already
 completed MFA there, Keycloak normally can't tell, so it asks for its own second factor anyway.
@@ -15,9 +17,9 @@ carries the upstream methods through to the `amr` claim in Keycloak's own tokens
 
 | Component | Provider id | Status |
 |---|---|---|
-| Protocol mapper: emits `amr` merging local and upstream methods | `upstream-mfa-amr-mapper` | Done |
-| IdP mapper: copies the upstream ID token's `amr` into a user-session note | `upstream-mfa-idp-mapper` | Done |
-| Conditional authenticator: matches upstream `amr` against an allowed list | `upstream-mfa-condition` | Done |
+| Protocol mapper: emits `amr` merging local and upstream methods | `assurance-amr-mapper` | Done |
+| IdP mapper: copies the upstream ID token's `amr` into a user-session note | `assurance-idp-amr-mapper` | Done |
+| Conditional authenticator: matches upstream `amr` against an allowed list | `assurance-upstream-mfa-condition` | Done |
 | Google provider override: requests the `amr` claim from Google | `google` | Done |
 | Microsoft provider override: validates Entra's ID token and keeps existing account links | `microsoft` | Done |
 
@@ -34,7 +36,7 @@ Keycloak logs a `KC-SERVICES0047` "internal SPI" warning for each of them at sta
 
 ## Configuration
 
-1. On each brokered IdP, add the **Upstream AMR to session note** mapper (`upstream-mfa-idp-mapper`).
+1. On each brokered IdP, add the **Upstream AMR to session note** mapper (`assurance-idp-amr-mapper`).
 2. In the IdP's post-login flow, wrap the local MFA steps in a conditional subflow gated by
    **Condition - upstream MFA** with *Negate output* on. Then add **Allow access** as a REQUIRED step after the
    subflow:
@@ -50,7 +52,7 @@ Keycloak logs a `KC-SERVICES0047` "internal SPI" warning for each of them at sta
    You need the **Allow access** step. When the condition skips the subflow, Keycloak drops it, and a flow left
    with nothing to run fails with `invalid_user_credentials`.
 3. On clients that should see upstream methods, use **AMR Mapper (with upstream IdP)**
-   (`upstream-mfa-amr-mapper`) in place of the built-in AMR mapper.
+   (`assurance-amr-mapper`) in place of the built-in AMR mapper.
 
 The upstream note is missing on the login that links a brokered identity to an *existing* account, unless the
 IdP's sync mode delegates to mappers on update. In that case the user gets local MFA, which is the safe fallback.
@@ -66,7 +68,7 @@ IdP's sync mode delegates to mappers on update. In that case the user gets local
 mvn package
 ```
 
-The provider jar is written to `target/keycloak-upstream-mfa-<version>.jar`. To install it,
+The provider jar is written to `target/keycloak-assurance-<version>.jar`. To install it,
 copy it into Keycloak's `providers/` directory and run `kc.sh build` (or restart in dev mode).
 
 ## Tests
