@@ -1,0 +1,79 @@
+{
+  "realm": "upstream",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "broker-mfa",
+      "secret": "broker-mfa-secret",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "redirectUris": ["*"],
+      "protocolMappers": [
+        {
+          "name": "amr pwd+mfa",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "claim.name": "amr",
+            "claim.value": "[\"pwd\",\"mfa\"]",
+            "jsonType.label": "JSON",
+            "id.token.claim": "true",
+            "access.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "broker-pwd",
+      "secret": "broker-pwd-secret",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "redirectUris": ["*"],
+      "protocolMappers": [
+        {
+          "name": "amr pwd",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "claim.name": "amr",
+            "claim.value": "[\"pwd\"]",
+            "jsonType.label": "JSON",
+            "id.token.claim": "true",
+            "access.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "email": "alice@example.com",
+      "emailVerified": true,
+      "firstName": "Alice",
+      "lastName": "Upstream",
+      "credentials": [{ "type": "password", "value": "alice", "temporary": false }]
+    },
+    {
+      "username": "carol",
+      "enabled": true,
+      "email": "carol@example.com",
+      "emailVerified": true,
+      "firstName": "Carol",
+      "lastName": "Upstream",
+      "credentials": [{ "type": "password", "value": "carol", "temporary": false }]
+    },
+    {
+      "username": "bob",
+      "enabled": true,
+      "email": "bob@example.com",
+      "emailVerified": true,
+      "firstName": "Bob",
+      "lastName": "Upstream",
+      "credentials": [{ "type": "password", "value": "bob", "temporary": false }]
+    }
+  ]
+}

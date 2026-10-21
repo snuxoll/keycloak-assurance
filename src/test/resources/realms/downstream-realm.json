@@ -1,0 +1,85 @@
+{
+  "realm": "downstream",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "app",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://localhost/callback"],
+      "protocolMappers": [
+        {
+          "name": "amr (with upstream)",
+          "protocol": "openid-connect",
+          "protocolMapper": "upstream-mfa-amr-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "authenticatorConfig": [
+    {
+      "alias": "upstream-mfa-negated",
+      "config": {
+        "allowedAmr": "mfa",
+        "negate": "true"
+      }
+    }
+  ],
+  "authenticationFlows": [
+    {
+      "alias": "post-broker-mfa",
+      "description": "Local 2FA unless the upstream IdP already did MFA",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "CONDITIONAL",
+          "priority": 10,
+          "autheticatorFlow": true,
+          "authenticatorFlow": true,
+          "flowAlias": "post-broker-mfa-gate",
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "allow-access-authenticator",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "autheticatorFlow": false,
+          "authenticatorFlow": false,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "post-broker-mfa-gate",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "upstream-mfa-condition",
+          "authenticatorConfig": "upstream-mfa-negated",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "autheticatorFlow": false,
+          "authenticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "auth-otp-form",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "autheticatorFlow": false,
+          "authenticatorFlow": false,
+          "userSetupAllowed": false
+        }
+      ]
+    }
+  ]
+}
